@@ -16,8 +16,8 @@
                             required
                         >
                     </div>
-                    <div class="col-2">
-                        <input type="submit" class="btn btn-primary btn-lg ms-3 px-5 text-uppercase mx-3" value="Проверить">
+                    <div class="col-4">
+                        <input type="submit" class="btn btn-primary btn-lg px-5 text-uppercase w-100" value="Проверить">
                     </div>
                 </form>
             </div>
