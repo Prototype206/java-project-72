@@ -66,5 +66,8 @@ tasks.shadowJar {
     archiveBaseName.set("app")
     archiveClassifier.set("")
     archiveVersion.set("")
+   
     configurations = listOf(project.configurations.runtimeClasspath.get())
+    
+    mergeServiceFiles()
 }
