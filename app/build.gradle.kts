@@ -6,6 +6,7 @@ plugins {
     id("org.sonarqube") version "7.3.1.8318"
     application
     id("io.github.goooler.shadow") version "8.1.8"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
     id("io.freefair.lombok") version "8.6"
 }
 
@@ -23,6 +24,9 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.1.0")
     implementation("com.h2database:h2:2.2.224")
     implementation("org.postgresql:postgresql:42.7.3")
+
+    implementation("io.javalin:javalin-rendering:6.1.3")
+    implementation("gg.jte:jte:3.1.12")
 
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
