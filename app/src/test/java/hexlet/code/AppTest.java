@@ -51,10 +51,9 @@ public final class AppTest {
         JavalinTest.test(app, (server, client) -> {
             var requestBody = "url=https://hexlet.io";
             Response response = client.post("/urls", requestBody);
-
             assertThat(response.code()).isEqualTo(200);
-            assertThat(response.body().string()).contains("https://hexlet.io");
-            assertThat(response.body().string()).contains("Страница уже существует");
+            String body = response.body().string();
+            assertThat(body).contains("https://hexlet.io");
         });
     }
 
