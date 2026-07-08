@@ -90,4 +90,33 @@ public final class AppTest {
             assertThat(response.body().string()).contains("https://yandex.ru");
         });
     }
+
+    @Test
+    public void testShowNonExistingUrl() {
+        JavalinTest.test(app, (server, client) -> {
+            Response response = client.get("/urls/9999909");
+            assertThat(response.code()).isEqualTo(404);
+        });
+    }
+
+    @Test
+    public void testCreateInvalidUrlRender() {
+        JavalinTest.test(app, (server, client) -> {
+            var requestBody = "url=not-a-valid-url";
+            Response response = client.post("/urls", requestBody);
+
+            assertThat(response.code()).isEqualTo(422);
+            String body = response.body().string();
+            assertThat(body).contains("Анализатор страниц");
+            assertThat(body).contains("Некорректный URL");
+        });
+    }
+
+    @Test
+    public void testShowUrlInvalidIdFormat() {
+        JavalinTest.test(app, (server, client) -> {
+            Response response = client.get("/urls/abc");
+            assertThat(response.code()).isEqualTo(500);
+        });
+    }
 }
