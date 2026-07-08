@@ -30,6 +30,9 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.assertj:assertj-core:3.25.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    
+    testImplementation("io.javalin:javalin-testtools:6.1.3")
+    testImplementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
 
 application {
