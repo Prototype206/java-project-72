@@ -1,6 +1,8 @@
 @import gg.jte.Content
 
 @param Content content
+@param String flash = null
+@param String flashType = null
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -23,6 +25,13 @@
             </div>
         </div>
     </nav>
+
+	@if(flash != null && !flash.isEmpty())
+	    <div class="alert alert-${flashType} alert-dismissible fade show" role="alert">
+	        ${flash}
+	        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+	    </div>
+	@endif
 
     <main class="flex-grow-1 mt-5">
         <div class="container-xl">
