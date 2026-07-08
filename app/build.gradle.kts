@@ -1,4 +1,3 @@
-
 plugins {
     id("java")
     id("checkstyle")
@@ -6,7 +5,6 @@ plugins {
     id("org.sonarqube") version "7.3.1.8318"
     application
     id("io.github.goooler.shadow") version "8.1.8"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
     id("io.freefair.lombok") version "8.6"
 }
 
@@ -38,6 +36,7 @@ application {
     mainClass.set("hexlet.code.App")
 }
 
+
 tasks.test {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
@@ -55,7 +54,7 @@ tasks.jacocoTestReport {
 }
 
 checkstyle {
-    toolVersion = "12.1.2"
+    toolVersion = "8.43"
     configFile = file("config/checkstyle/checkstyle.xml")
 }
 
@@ -74,4 +73,5 @@ tasks.shadowJar {
     configurations = listOf(project.configurations.runtimeClasspath.get())
     
     mergeServiceFiles()
+    
 }
