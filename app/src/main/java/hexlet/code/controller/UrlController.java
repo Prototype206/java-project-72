@@ -9,11 +9,17 @@ import hexlet.code.repository.UrlRepository;
 import org.jsoup.Jsoup;
 import java.net.URI;
 import java.sql.Timestamp;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UrlController {
 
     public static void index(Context ctx) {
-        ctx.render("index.jte", java.util.Collections.emptyMap());
+        ctx.render("index.jte", Map.of(
+            "flash", "",
+            "flashType", ""
+        ));
     }
 
     public static void create(Context ctx) {
@@ -29,7 +35,7 @@ public class UrlController {
             normalizedUrl = protocol + "://" + authority;
         } catch (Exception e) {
             ctx.status(HttpStatus.UNPROCESSABLE_CONTENT);
-            ctx.render("index.jte", java.util.Map.of(
+            ctx.render("index.jte", Map.of(
                 "flash", "Некорректный URL",
                 "flashType", "danger"
             ));
@@ -61,7 +67,7 @@ public class UrlController {
         try {
             var urls = UrlRepository.getEntities();
 
-            java.util.Map<Long, UrlCheck> latestChecks = new java.util.HashMap<>();
+            Map<Long, UrlCheck> latestChecks = new HashMap<>();
             for (var url : urls) {
                 var checks = UrlCheckRepository.findByUrlId(url.getId());
                 if (!checks.isEmpty()) {
@@ -69,7 +75,7 @@ public class UrlController {
                 }
             }
 
-            ctx.render("urls/index.jte", java.util.Map.of(
+            ctx.render("urls/index.jte", Map.of(
                 "urls", urls,
                 "latestChecks", latestChecks
             ));
@@ -96,7 +102,7 @@ public class UrlController {
             ctx.sessionAttribute("flash", null);
             ctx.sessionAttribute("flashType", null);
 
-            ctx.render("urls/show.jte", java.util.Map.of(
+            ctx.render("urls/show.jte", Map.of(
                 "url", url.get(),
                 "checks", checks,
                 "flash", flash == null ? "" : flash,
@@ -119,14 +125,17 @@ public class UrlController {
             }
             var url = urlOptional.get();
 
-            var response = Jsoup.connect(url.getName())
-                    .userAgent("Mozilla/5.0")
-                    .timeout(10000) 
-                    .ignoreHttpErrors(true)
-                    .execute();
+            var response = kong.unirest.Unirest.get(url.getName()).asString();
+            int statusCode = response.getStatus();
 
-            int statusCode = response.statusCode();
-            var doc = response.parse();
+            if (statusCode >= 400) {
+                ctx.sessionAttribute("flash", "Произошла ошибка при проверке");
+                ctx.sessionAttribute("flashType", "danger");
+                ctx.redirect("/urls/" + id);
+                return;
+            }
+
+            var doc = Jsoup.parse(response.getBody());
 
             String title = doc.title();
 
@@ -148,13 +157,10 @@ public class UrlController {
 
             ctx.sessionAttribute("flash", "Страница успешно проверена");
             ctx.sessionAttribute("flashType", "success");
+
         } catch (Exception e) {
-            ctx.status(500);
-            java.io.StringWriter sw = new java.io.StringWriter();
-            java.io.PrintWriter pw = new java.io.PrintWriter(sw);
-            e.printStackTrace(pw);
-            ctx.result("DEBUG ERROR: " + e.getMessage() + "\n" + sw.toString());
-            return;
+            ctx.sessionAttribute("flash", "Произошла ошибка при проверке");
+            ctx.sessionAttribute("flashType", "danger");
         }
 
         ctx.redirect("/urls/" + id);
