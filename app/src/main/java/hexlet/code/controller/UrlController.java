@@ -125,6 +125,7 @@ public class UrlController {
             var doc = Jsoup.parse(response.getBody());
 
             String title = doc.title();
+
             var h1Element = doc.selectFirst("h1");
             String h1 = h1Element != null ? h1Element.text() : "";
 
@@ -134,9 +135,9 @@ public class UrlController {
             var check = new UrlCheck(
                 id,
                 statusCode,
-                h1.length() > 200 ? h1.substring(0, 200) + "..." : h1,
-                title.length() > 200 ? title.substring(0, 200) + "..." : title,
-                description.length() > 200 ? description.substring(0, 200) + "..." : description,
+                truncate(h1),
+                truncate(title),
+                truncate(description),
                 new Timestamp(System.currentTimeMillis())
             );
             UrlCheckRepository.save(check);
@@ -149,5 +150,12 @@ public class UrlController {
         }
 
         ctx.redirect("/urls/" + id);
+    }
+
+    private static String truncate(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.length() > 200 ? text.substring(0, 200) + "..." : text;
     }
 }
