@@ -121,6 +121,7 @@ public class UrlController {
 
             var response = Jsoup.connect(url.getName())
                     .userAgent("Mozilla/5.0")
+                    .timeout(10000) 
                     .ignoreHttpErrors(true)
                     .execute();
 

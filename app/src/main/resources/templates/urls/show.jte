@@ -61,14 +61,14 @@
             </table>
         </div>
 
-        <h2 class="mt-5">Проверки</h2>
+		<h2 class="mt-5">Проверки</h2>
         
         <form method="post" action="/urls/${url.getId()}/checks" class="mb-3">
             <button type="submit" class="btn btn-primary">Запустить проверку</button>
         </form>
 
         <div class="table-responsive">
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered table-hover" data-test="checks">
                 <thead>
                     <tr>
                         <th class="col-1">ID</th>
