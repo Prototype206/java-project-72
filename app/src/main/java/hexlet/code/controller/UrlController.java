@@ -148,11 +148,12 @@ public class UrlController {
             ctx.sessionAttribute("flash", "Страница успешно проверена");
             ctx.sessionAttribute("flashType", "success");
         } catch (Exception e) {
-            System.out.println("Ошибка при выполнении проверки URL: " + e.getMessage());
-            e.printStackTrace();
-
-            ctx.sessionAttribute("flash", "Произошла ошибка при проверке");
-            ctx.sessionAttribute("flashType", "danger");
+            ctx.status(500);
+            java.io.StringWriter sw = new java.io.StringWriter();
+            java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+            e.printStackTrace(pw);
+            ctx.result("DEBUG ERROR: " + e.getMessage() + "\n" + sw.toString());
+            return;
         }
 
         ctx.redirect("/urls/" + id);
