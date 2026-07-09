@@ -6,18 +6,55 @@ import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+
+import hexlet.code.repository.UrlCheckRepository;
 import hexlet.code.repository.UrlRepository;
 import hexlet.code.model.Url;
+import hexlet.code.repository.BaseRepository;
+
 import java.sql.Timestamp;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 
 public final class AppTest {
 
     private Javalin app;
+    private static MockWebServer mockServer;
+
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        mockServer = new MockWebServer();
+        mockServer.start();
+    }
+
+    @AfterAll
+    public static void afterAll() throws Exception {
+        mockServer.shutdown();
+    }
 
     @BeforeEach
     public void setUp() throws Exception {
+        // Создаем свежий инстанс приложения для каждого теста
         app = App.getApp();
+
+        // Очищаем таблицы перед тестом
+        try (var conn = BaseRepository.dataSource.getConnection();
+             var stmt = conn.createStatement()) {
+            stmt.execute("DELETE FROM url_checks");
+            stmt.execute("DELETE FROM urls");
+        }
+    }
+
+    @AfterEach
+    public void tearDown() {
+        // ОБЯЗАТЕЛЬНО останавливаем приложение, чтобы освободить порт и H2 базу
+        if (app != null) {
+            app.stop();
+        }
     }
 
     @Test
@@ -117,6 +154,33 @@ public final class AppTest {
         JavalinTest.test(app, (server, client) -> {
             Response response = client.get("/urls/abc");
             assertThat(response.code()).isEqualTo(500);
+        });
+    }
+
+    @Test
+    public void testUrlCheckWithMock() throws Exception {
+        String fakeHtml = "<html><head><title>Test Title</title></head>"
+                + "<body><h1>Test H1</h1><meta name=\"description\" content=\"Test Desc\" /></body></html>";
+
+        mockServer.enqueue(new MockResponse().setBody(fakeHtml).setResponseCode(200));
+
+        String mockUrl = mockServer.url("/").toString();
+
+        var url = new Url(mockUrl, new Timestamp(System.currentTimeMillis()));
+        UrlRepository.save(url);
+
+        JavalinTest.test(app, (server, client) -> {
+            Response response = client.post("/urls/" + url.getId() + "/checks");
+            assertThat(response.code()).isEqualTo(200);
+
+            var checks = UrlCheckRepository.findByUrlId(url.getId());
+            assertThat(checks).isNotEmpty();
+
+            var lastCheck = checks.get(0);
+            assertThat(lastCheck.getStatusCode()).isEqualTo(200);
+            assertThat(lastCheck.getTitle()).isEqualTo("Test Title");
+            assertThat(lastCheck.getH1()).isEqualTo("Test H1");
+            assertThat(lastCheck.getDescription()).isEqualTo("Test Desc");
         });
     }
 }

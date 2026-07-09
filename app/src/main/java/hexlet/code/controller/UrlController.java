@@ -2,7 +2,10 @@ package hexlet.code.controller;
 
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import kong.unirest.Unirest;
 import hexlet.code.model.Url;
+import hexlet.code.model.UrlCheck;
+import hexlet.code.repository.UrlCheckRepository;
 import hexlet.code.repository.UrlRepository;
 import java.net.URI;
 import java.sql.Timestamp;
@@ -58,7 +61,19 @@ public class UrlController {
     public static void listUrls(Context ctx) {
         try {
             var urls = UrlRepository.getEntities();
-            ctx.render("urls/index.jte", Collections.singletonMap("urls", urls));
+
+            java.util.Map<Long, UrlCheck> latestChecks = new java.util.HashMap<>();
+            for (var url : urls) {
+                var checks = UrlCheckRepository.findByUrlId(url.getId());
+                if (!checks.isEmpty()) {
+                    latestChecks.put(url.getId(), checks.get(0));
+                }
+            }
+
+            ctx.render("urls/index.jte", java.util.Map.of(
+                "urls", urls,
+                "latestChecks", latestChecks
+            ));
         } catch (Exception e) {
             ctx.status(500);
             ctx.result(e.getMessage());
@@ -74,6 +89,8 @@ public class UrlController {
                 return;
             }
 
+            var checks = UrlCheckRepository.findByUrlId(id);
+
             String flash = ctx.sessionAttribute("flash");
             String flashType = ctx.sessionAttribute("flashType");
 
@@ -82,6 +99,7 @@ public class UrlController {
 
             ctx.render("urls/show.jte", java.util.Map.of(
                 "url", url.get(),
+                "checks", checks,
                 "flash", flash == null ? "" : flash,
                 "flashType", flashType == null ? "" : flashType
             ));
@@ -89,5 +107,59 @@ public class UrlController {
             ctx.status(500);
             ctx.result(e.getMessage());
         }
+    }
+
+    public static void checkUrl(Context ctx) throws Exception {
+        long id = ctx.pathParamAsClass("id", Long.class).get();
+        var urlOptional = UrlRepository.find(id); // Используем find
+
+        if (urlOptional.isEmpty()) {
+            ctx.status(HttpStatus.NOT_FOUND);
+            return;
+        }
+
+        var url = urlOptional.get();
+
+        try {
+            var response = Unirest.get(url.getName()).asString();
+            int statusCode = response.getStatus();
+
+            if (statusCode >= 400) {
+                throw new Exception("Ошибка доступности сайта");
+            }
+
+            var doc = org.jsoup.Jsoup.parse(response.getBody());
+
+            String title = doc.title();
+            var h1Element = doc.selectFirst("h1");
+            String h1 = h1Element != null ? h1Element.text() : "";
+            var descriptionElement = doc.selectFirst("meta[name=description]");
+            String description = descriptionElement != null ? descriptionElement.attr("content") : "";
+
+            var check = new UrlCheck(
+                id,
+                statusCode,
+                truncate(h1),
+                truncate(title),
+                truncate(description),
+                new Timestamp(System.currentTimeMillis())
+            );
+            UrlCheckRepository.save(check);
+
+            ctx.sessionAttribute("flash", "Страница успешно проверена");
+            ctx.sessionAttribute("flashType", "success");
+        } catch (Exception e) {
+            ctx.sessionAttribute("flash", "Произошла ошибка при проверке");
+            ctx.sessionAttribute("flashType", "danger");
+        }
+
+        ctx.redirect("/urls/" + id);
+    }
+
+    private static String truncate(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.length() > 200 ? text.substring(0, 200) + "..." : text;
     }
 }

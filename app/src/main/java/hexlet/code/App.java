@@ -55,6 +55,7 @@ public class App {
         app.post("/urls", UrlController::create);
         app.get("/urls", UrlController::listUrls);
         app.get("/urls/{id}", UrlController::showUrl);
+        app.post("/urls/{id}/checks", UrlController::checkUrl);
 
         return app;
     }
