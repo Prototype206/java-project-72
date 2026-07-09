@@ -123,6 +123,7 @@ public class UrlController {
             var response = Unirest.get(url.getName()).asString();
             int statusCode = response.getStatus();
             var doc = Jsoup.parse(response.getBody());
+
             String title = doc.title();
             var h1Element = doc.selectFirst("h1");
             String h1 = h1Element != null ? h1Element.text() : "";
@@ -133,9 +134,9 @@ public class UrlController {
             var check = new UrlCheck(
                 id,
                 statusCode,
-                h1,
-                title,
-                description,
+                h1.length() > 200 ? h1.substring(0, 200) + "..." : h1,
+                title.length() > 200 ? title.substring(0, 200) + "..." : title,
+                description.length() > 200 ? description.substring(0, 200) + "..." : description,
                 new Timestamp(System.currentTimeMillis())
             );
             UrlCheckRepository.save(check);

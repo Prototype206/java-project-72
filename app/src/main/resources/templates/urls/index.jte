@@ -1,6 +1,11 @@
 @import hexlet.code.model.Url
+@import hexlet.code.model.UrlCheck
 @import java.util.List
+@import java.util.Map
+@import java.time.format.DateTimeFormatter
+
 @param List<Url> urls
+@param Map<Long, UrlCheck> latestChecks
 
 @template.layout.page(
     content = @`
@@ -22,8 +27,16 @@
                             <td>
                                 <a href="/urls/${url.getId()}">${url.getName()}</a>
                             </td>
-                            <td></td>
-                            <td></td>
+                            <td>
+                                @if(latestChecks != null && latestChecks.containsKey(url.getId()) && latestChecks.get(url.getId()) != null)
+                                    ${latestChecks.get(url.getId()).getCreatedAt().toLocalDateTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))}
+                                @endif
+                            </td>
+                            <td>
+                                @if(latestChecks != null && latestChecks.containsKey(url.getId()) && latestChecks.get(url.getId()) != null)
+                                    ${latestChecks.get(url.getId()).getStatusCode()}
+                                @endif
+                            </td>
                         </tr>
                     @endfor
                 </tbody>
