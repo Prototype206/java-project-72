@@ -35,34 +35,40 @@
         </div>
     @endif
 
-    <main class="flex-grow-1">
-        <div class="container-lg mt-5">
-            <h1>Сайт: ${url.getName()}</h1>
+    <main class="flex-grow-1 container-lg mt-5">
+        <h1>Сайт: ${url.getName()}</h1>
 
-            <table class="table table-bordered table-hover mt-3">
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-hover">
                 <tbody>
                     <tr>
-                        <td class="col-2">ID</td>
+                        <th class="col-2">ID</th>
                         <td>${url.getId()}</td>
                     </tr>
                     <tr>
-                        <td>Имя</td>
+                        <th>Имя</th>
                         <td>${url.getName()}</td>
                     </tr>
                     <tr>
-                        <td>Дата создания</td>
-                        <td>${url.getCreatedAt().toLocalDateTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))}</td>
+                        <th>Дата создания</th>
+                        <td>
+                            @if(url.getCreatedAt() != null)
+                                ${url.getCreatedAt().toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}
+                            @endif
+                        </td>
                     </tr>
                 </tbody>
             </table>
+        </div>
 
-            <h2 class="mt-5">Проверки</h2>
+        <h2 class="mt-5">Проверки</h2>
+        
+        <form method="post" action="/urls/${url.getId()}/checks" class="mb-3">
+            <button type="submit" class="btn btn-primary">Запустить проверку</button>
+        </form>
 
-            <form method="post" action="/urls/${url.getId()}/checks" class="mb-3">
-                <input type="submit" class="btn btn-primary" value="Запустить проверку">
-            </form>
-
-            <table class="table table-bordered table-hover" data-test="checks">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
                         <th class="col-1">ID</th>
@@ -82,7 +88,7 @@
                                 <td>${check.getH1()}</td>
                                 <td>${check.getTitle()}</td>
                                 <td>${check.getDescription()}</td>
-                                <td>${check.getCreatedAt().toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}</td>
+                                <td>${check.getCreatedAt().toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}</td>
                             </tr>
                         @endfor
                     @endif

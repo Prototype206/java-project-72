@@ -29,7 +29,7 @@
                             </td>
                             <td>
                                 @if(latestChecks != null && latestChecks.containsKey(url.getId()) && latestChecks.get(url.getId()) != null)
-                                    ${latestChecks.get(url.getId()).getCreatedAt().toLocalDateTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))}
+                                    ${latestChecks.get(url.getId()).getCreatedAt().toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}
                                 @endif
                             </td>
                             <td>
