@@ -7,9 +7,9 @@ import hexlet.code.model.Url;
 import hexlet.code.model.UrlCheck;
 import hexlet.code.repository.UrlCheckRepository;
 import hexlet.code.repository.UrlRepository;
+import org.jsoup.Jsoup;
 import java.net.URI;
 import java.sql.Timestamp;
-import java.util.Collections;
 
 public class UrlController {
 
@@ -29,7 +29,7 @@ public class UrlController {
             String authority = url.getAuthority();
             normalizedUrl = protocol + "://" + authority;
         } catch (Exception e) {
-            ctx.status(io.javalin.http.HttpStatus.UNPROCESSABLE_CONTENT);
+            ctx.status(HttpStatus.UNPROCESSABLE_CONTENT);
             ctx.render("index.jte", java.util.Map.of(
                 "flash", "Некорректный URL",
                 "flashType", "danger"
@@ -75,7 +75,7 @@ public class UrlController {
                 "latestChecks", latestChecks
             ));
         } catch (Exception e) {
-            ctx.status(500);
+            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR);
             ctx.result(e.getMessage());
         }
     }
@@ -104,44 +104,38 @@ public class UrlController {
                 "flashType", flashType == null ? "" : flashType
             ));
         } catch (Exception e) {
-            ctx.status(500);
+            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR);
             ctx.result(e.getMessage());
         }
     }
 
-    public static void checkUrl(Context ctx) throws Exception {
+    public static void checkUrl(Context ctx) {
         long id = ctx.pathParamAsClass("id", Long.class).get();
-        var urlOptional = UrlRepository.find(id); // Используем find
-
-        if (urlOptional.isEmpty()) {
-            ctx.status(HttpStatus.NOT_FOUND);
-            return;
-        }
-
-        var url = urlOptional.get();
 
         try {
+            var urlOptional = UrlRepository.find(id);
+
+            if (urlOptional.isEmpty()) {
+                ctx.status(HttpStatus.NOT_FOUND);
+                return;
+            }
+            var url = urlOptional.get();
             var response = Unirest.get(url.getName()).asString();
             int statusCode = response.getStatus();
-
-            if (statusCode >= 400) {
-                throw new Exception("Ошибка доступности сайта");
-            }
-
-            var doc = org.jsoup.Jsoup.parse(response.getBody());
-
+            var doc = Jsoup.parse(response.getBody());
             String title = doc.title();
             var h1Element = doc.selectFirst("h1");
             String h1 = h1Element != null ? h1Element.text() : "";
+
             var descriptionElement = doc.selectFirst("meta[name=description]");
             String description = descriptionElement != null ? descriptionElement.attr("content") : "";
 
             var check = new UrlCheck(
                 id,
                 statusCode,
-                truncate(h1),
-                truncate(title),
-                truncate(description),
+                h1,
+                title,
+                description,
                 new Timestamp(System.currentTimeMillis())
             );
             UrlCheckRepository.save(check);
@@ -154,12 +148,5 @@ public class UrlController {
         }
 
         ctx.redirect("/urls/" + id);
-    }
-
-    private static String truncate(String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.length() > 200 ? text.substring(0, 200) + "..." : text;
     }
 }
