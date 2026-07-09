@@ -2,7 +2,6 @@ package hexlet.code.controller;
 
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
-import kong.unirest.Unirest;
 import hexlet.code.model.Url;
 import hexlet.code.model.UrlCheck;
 import hexlet.code.repository.UrlCheckRepository;
@@ -120,9 +119,13 @@ public class UrlController {
                 return;
             }
             var url = urlOptional.get();
-            var response = Unirest.get(url.getName()).asString();
-            int statusCode = response.getStatus();
-            var doc = Jsoup.parse(response.getBody());
+
+            var response = Jsoup.connect(url.getName())
+                .ignoreHttpErrors(true)
+                .execute();
+
+            int statusCode = response.statusCode();
+            var doc = response.parse();
 
             String title = doc.title();
 
@@ -145,6 +148,9 @@ public class UrlController {
             ctx.sessionAttribute("flash", "Страница успешно проверена");
             ctx.sessionAttribute("flashType", "success");
         } catch (Exception e) {
+            System.out.println("Ошибка при выполнении проверки URL: " + e.getMessage());
+            e.printStackTrace();
+
             ctx.sessionAttribute("flash", "Произошла ошибка при проверке");
             ctx.sessionAttribute("flashType", "danger");
         }
