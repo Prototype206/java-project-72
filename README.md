@@ -16,5 +16,11 @@
 # Сборка проекта
 make setup
 
+# Запуск тестов
+make test
+
+# Запуск checkstyle
+make checkstyle
+
 # Запуск в режиме разработки
 ./gradlew run
