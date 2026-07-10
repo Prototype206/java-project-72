@@ -1,6 +1,7 @@
 package hexlet.code;
 
 import io.javalin.Javalin;
+import io.javalin.http.HttpStatus;
 import io.javalin.rendering.template.JavalinJte;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -50,6 +51,11 @@ public class App {
             var templateEngine = TemplateEngine.create(codeResolver, gg.jte.ContentType.Html);
             config.fileRenderer(new JavalinJte(templateEngine));
         });
+
+//        app.exception(Exception.class, (e, ctx) -> {
+//            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR);
+//            ctx.result("Внутренняя ошибка сервера: " + e.getMessage());
+//        });
 
         app.get("/", UrlController::index);
         app.post("/urls", UrlController::create);

@@ -3,6 +3,7 @@
 @import java.util.List
 @import java.util.Map
 @import java.time.format.DateTimeFormatter
+@import java.time.ZoneId
 
 @param List<Url> urls
 @param Map<Long, UrlCheck> latestChecks
@@ -29,7 +30,7 @@
                             </td>
                             <td>
                                 @if(latestChecks != null && latestChecks.containsKey(url.getId()) && latestChecks.get(url.getId()) != null)
-                                    ${latestChecks.get(url.getId()).getCreatedAt().toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}
+                                    ${latestChecks.get(url.getId()).getCreatedAt().atZone(java.time.ZoneId.of("UTC")).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))}
                                 @endif
                             </td>
                             <td>

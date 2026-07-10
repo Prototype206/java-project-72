@@ -10,3 +10,11 @@
 ## Demo
 [Приложение на Render](https://java-project-72-8coq.onrender.com)
 
+## Запуск приложения
+
+```bash
+# Сборка проекта
+make setup
+
+# Запуск в режиме разработки
+./gradlew run

@@ -8,9 +8,7 @@ import hexlet.code.repository.UrlCheckRepository;
 import hexlet.code.repository.UrlRepository;
 import org.jsoup.Jsoup;
 import java.net.URI;
-import java.sql.Timestamp;
-import java.util.Collections;
-import java.util.HashMap;
+import java.time.Instant;
 import java.util.Map;
 
 public class UrlController {
@@ -22,17 +20,13 @@ public class UrlController {
         ));
     }
 
-    public static void create(Context ctx) {
+    public static void create(Context ctx) throws Exception {
         String inputUrl = ctx.formParam("url");
-        String normalizedUrl;
+        URI parsedUrl;
 
         try {
-            var uri = new URI(inputUrl);
-            var url = uri.toURL();
-
-            String protocol = url.getProtocol();
-            String authority = url.getAuthority();
-            normalizedUrl = protocol + "://" + authority;
+            parsedUrl = new URI(inputUrl);
+            parsedUrl.toURL();
         } catch (Exception e) {
             ctx.status(HttpStatus.UNPROCESSABLE_CONTENT);
             ctx.render("index.jte", Map.of(
@@ -42,89 +36,70 @@ public class UrlController {
             return;
         }
 
-        try {
-            var existingUrl = UrlRepository.findByName(normalizedUrl);
-            if (existingUrl.isPresent()) {
-                ctx.sessionAttribute("flash", "Страница уже существует");
-                ctx.sessionAttribute("flashType", "info");
-                ctx.header("Cache-Control", "no-cache, no-store, must-revalidate");
-                ctx.redirect("/urls/" + existingUrl.get().getId());
-            } else {
-                var newUrl = new Url(normalizedUrl, new Timestamp(System.currentTimeMillis()));
-                UrlRepository.save(newUrl);
-                ctx.sessionAttribute("flash", "Страница успешно добавлена");
-                ctx.sessionAttribute("flashType", "success");
-                ctx.header("Cache-Control", "no-cache, no-store, must-revalidate");
-                ctx.redirect("/urls/" + newUrl.getId());
-            }
-        } catch (Exception e) {
-            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR);
-            ctx.result("Ошибка базы данных: " + e.getMessage());
+        String protocol = parsedUrl.getScheme();
+        String authority = parsedUrl.getAuthority();
+        String normalizedUrl = protocol + "://" + authority;
+
+        var existingUrl = UrlRepository.findByName(normalizedUrl);
+        if (existingUrl.isPresent()) {
+            ctx.sessionAttribute("flash", "Страница уже существует");
+            ctx.sessionAttribute("flashType", "info");
+            ctx.redirect("/urls/" + existingUrl.get().getId());
+        } else {
+            var newUrl = new Url(normalizedUrl, Instant.now());
+            UrlRepository.save(newUrl);
+            ctx.sessionAttribute("flash", "Страница успешно добавлена");
+            ctx.sessionAttribute("flashType", "success");
+            ctx.redirect("/urls/" + newUrl.getId());
         }
     }
 
-    public static void listUrls(Context ctx) {
-        try {
-            var urls = UrlRepository.getEntities();
+    public static void listUrls(Context ctx) throws Exception {
+        var urls = UrlRepository.getEntities();
+        var latestChecks = UrlCheckRepository.getLatestChecks();
 
-            Map<Long, UrlCheck> latestChecks = new HashMap<>();
-            for (var url : urls) {
-                var checks = UrlCheckRepository.findByUrlId(url.getId());
-                if (!checks.isEmpty()) {
-                    latestChecks.put(url.getId(), checks.get(0));
-                }
-            }
-
-            ctx.render("urls/index.jte", Map.of(
-                "urls", urls,
-                "latestChecks", latestChecks
-            ));
-        } catch (Exception e) {
-            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR);
-            ctx.result(e.getMessage());
-        }
+        ctx.render("urls/index.jte", Map.of(
+            "urls", urls,
+            "latestChecks", latestChecks
+        ));
     }
 
-    public static void showUrl(Context ctx) {
+    public static void showUrl(Context ctx) throws Exception {
         long id = ctx.pathParamAsClass("id", Long.class).get();
-        try {
-            var url = UrlRepository.find(id);
-            if (url.isEmpty()) {
-                ctx.status(HttpStatus.NOT_FOUND);
-                return;
-            }
+        var url = UrlRepository.find(id);
 
-            var checks = UrlCheckRepository.findByUrlId(id);
-
-            String flash = ctx.sessionAttribute("flash");
-            String flashType = ctx.sessionAttribute("flashType");
-
-            ctx.sessionAttribute("flash", null);
-            ctx.sessionAttribute("flashType", null);
-
-            ctx.render("urls/show.jte", Map.of(
-                "url", url.get(),
-                "checks", checks,
-                "flash", flash == null ? "" : flash,
-                "flashType", flashType == null ? "" : flashType
-            ));
-        } catch (Exception e) {
-            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR);
-            ctx.result(e.getMessage());
+        if (url.isEmpty()) {
+            ctx.status(HttpStatus.NOT_FOUND);
+            return;
         }
+
+        var checks = UrlCheckRepository.findByUrlId(id);
+
+        String flash = ctx.sessionAttribute("flash");
+        String flashType = ctx.sessionAttribute("flashType");
+
+        ctx.sessionAttribute("flash", null);
+        ctx.sessionAttribute("flashType", null);
+
+        ctx.render("urls/show.jte", Map.of(
+            "url", url.get(),
+            "checks", checks,
+            "flash", flash == null ? "" : flash,
+            "flashType", flashType == null ? "" : flashType
+        ));
     }
 
-    public static void checkUrl(Context ctx) {
+    public static void checkUrl(Context ctx) throws Exception {
         long id = ctx.pathParamAsClass("id", Long.class).get();
+        var urlOptional = UrlRepository.find(id);
+
+        if (urlOptional.isEmpty()) {
+            ctx.status(HttpStatus.NOT_FOUND);
+            return;
+        }
+        var url = urlOptional.get();
 
         try {
-            var urlOptional = UrlRepository.find(id);
-            if (urlOptional.isEmpty()) {
-                ctx.status(HttpStatus.NOT_FOUND);
-                return;
-            }
-            var url = urlOptional.get();
-
             var response = kong.unirest.Unirest.get(url.getName()).asString();
             int statusCode = response.getStatus();
 
@@ -136,7 +111,6 @@ public class UrlController {
             }
 
             var doc = Jsoup.parse(response.getBody());
-
             String title = doc.title();
 
             var h1Element = doc.selectFirst("h1");
@@ -151,7 +125,7 @@ public class UrlController {
                 truncate(h1),
                 truncate(title),
                 truncate(description),
-                new Timestamp(System.currentTimeMillis())
+                Instant.now()
             );
             UrlCheckRepository.save(check);
 

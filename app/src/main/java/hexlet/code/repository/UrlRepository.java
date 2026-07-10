@@ -14,7 +14,7 @@ public class UrlRepository extends BaseRepository {
         try (var conn = dataSource.getConnection();
              var stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, url.getName());
-            stmt.setTimestamp(2, url.getCreatedAt());
+            stmt.setTimestamp(2, Timestamp.from(url.getCreatedAt()));
             stmt.executeUpdate();
 
             var generatedKeys = stmt.getGeneratedKeys();
@@ -31,7 +31,7 @@ public class UrlRepository extends BaseRepository {
             stmt.setString(1, name);
             var resultSet = stmt.executeQuery();
             if (resultSet.next()) {
-                var url = new Url(resultSet.getString("name"), resultSet.getTimestamp("created_at"));
+                var url = new Url(resultSet.getString("name"), resultSet.getTimestamp("created_at").toInstant());
                 url.setId(resultSet.getLong("id"));
                 return Optional.of(url);
             }
@@ -46,7 +46,7 @@ public class UrlRepository extends BaseRepository {
             stmt.setLong(1, id);
             var resultSet = stmt.executeQuery();
             if (resultSet.next()) {
-                var url = new Url(resultSet.getString("name"), resultSet.getTimestamp("created_at"));
+                var url = new Url(resultSet.getString("name"), resultSet.getTimestamp("created_at").toInstant());
                 url.setId(resultSet.getLong("id"));
                 return Optional.of(url);
             }
@@ -61,7 +61,7 @@ public class UrlRepository extends BaseRepository {
             var resultSet = stmt.executeQuery();
             var result = new ArrayList<Url>();
             while (resultSet.next()) {
-                var url = new Url(resultSet.getString("name"), resultSet.getTimestamp("created_at"));
+                var url = new Url(resultSet.getString("name"), resultSet.getTimestamp("created_at").toInstant());
                 url.setId(resultSet.getLong("id"));
                 result.add(url);
             }

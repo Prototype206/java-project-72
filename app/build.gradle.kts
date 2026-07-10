@@ -1,5 +1,4 @@
 plugins {
-    id("java")
     id("checkstyle")
     id("jacoco")
     id("org.sonarqube") version "7.3.1.8318"

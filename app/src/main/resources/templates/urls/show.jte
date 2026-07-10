@@ -1,6 +1,7 @@
 @import hexlet.code.model.Url
 @import hexlet.code.model.UrlCheck
 @import java.time.format.DateTimeFormatter
+@import java.time.ZoneId
 
 @param Url url
 @param java.util.List<UrlCheck> checks
@@ -53,7 +54,7 @@
                         <th>Дата создания</th>
                         <td>
                             @if(url.getCreatedAt() != null)
-                                ${url.getCreatedAt().toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}
+                                ${url.getCreatedAt().atZone(java.time.ZoneId.of("UTC")).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))}
                             @endif
                         </td>
                     </tr>
@@ -88,7 +89,7 @@
                                 <td>${check.getH1()}</td>
                                 <td>${check.getTitle()}</td>
                                 <td>${check.getDescription()}</td>
-                                <td>${check.getCreatedAt().toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}</td>
+                                <td>${check.getCreatedAt().atZone(ZoneId.of("UTC")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}</td>
                             </tr>
                         @endfor
                     @endif

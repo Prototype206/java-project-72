@@ -3,6 +3,7 @@ package hexlet.code;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.javalin.Javalin;
+import io.javalin.http.HttpStatus;
 import io.javalin.testtools.JavalinTest;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +17,7 @@ import hexlet.code.repository.UrlRepository;
 import hexlet.code.model.Url;
 import hexlet.code.repository.BaseRepository;
 
-import java.sql.Timestamp;
+import java.time.Instant;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 
@@ -38,10 +39,8 @@ public final class AppTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        // Создаем свежий инстанс приложения для каждого теста
         app = App.getApp();
 
-        // Очищаем таблицы перед тестом
         try (var conn = BaseRepository.dataSource.getConnection();
              var stmt = conn.createStatement()) {
             stmt.execute("DELETE FROM url_checks");
@@ -51,7 +50,6 @@ public final class AppTest {
 
     @AfterEach
     public void tearDown() {
-        // ОБЯЗАТЕЛЬНО останавливаем приложение, чтобы освободить порт и H2 базу
         if (app != null) {
             app.stop();
         }
@@ -61,7 +59,7 @@ public final class AppTest {
     public void testMainPage() {
         JavalinTest.test(app, (server, client) -> {
             Response response = client.get("/");
-            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.code()).isEqualTo(HttpStatus.OK.getCode());
             assertThat(response.body().string()).contains("Анализатор страниц");
         });
     }
@@ -72,7 +70,7 @@ public final class AppTest {
             var requestBody = "url=https://github.com";
             Response response = client.post("/urls", requestBody);
 
-            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.code()).isEqualTo(HttpStatus.OK.getCode());
             assertThat(response.body().string()).contains("https://github.com");
 
             var actualUrl = UrlRepository.findByName("https://github.com");
@@ -82,13 +80,13 @@ public final class AppTest {
 
     @Test
     public void testCreateDuplicateUrl() throws Exception {
-        var url = new Url("https://hexlet.io", new Timestamp(System.currentTimeMillis()));
+        var url = new Url("https://hexlet.io", Instant.now());
         UrlRepository.save(url);
 
         JavalinTest.test(app, (server, client) -> {
             var requestBody = "url=https://hexlet.io";
             Response response = client.post("/urls", requestBody);
-            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.code()).isEqualTo(HttpStatus.OK.getCode());
             String body = response.body().string();
             assertThat(body).contains("https://hexlet.io");
         });
@@ -100,30 +98,30 @@ public final class AppTest {
             var requestBody = "url=not-a-valid-url";
             Response response = client.post("/urls", requestBody);
 
-            assertThat(response.code()).isEqualTo(422);
+            assertThat(response.code()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT.getCode());
         });
     }
 
     @Test
     public void testUrlPage() throws Exception {
-        var url = new Url("https://google.com", new Timestamp(System.currentTimeMillis()));
+        var url = new Url("https://google.com", Instant.now());
         UrlRepository.save(url);
 
         JavalinTest.test(app, (server, client) -> {
             Response response = client.get("/urls/" + url.getId());
-            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.code()).isEqualTo(HttpStatus.OK.getCode());
             assertThat(response.body().string()).contains("https://google.com");
         });
     }
 
     @Test
     public void testUrlsListPage() throws Exception {
-        var url = new Url("https://yandex.ru", new Timestamp(System.currentTimeMillis()));
+        var url = new Url("https://yandex.ru", Instant.now());
         UrlRepository.save(url);
 
         JavalinTest.test(app, (server, client) -> {
             Response response = client.get("/urls");
-            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.code()).isEqualTo(HttpStatus.OK.getCode());
             assertThat(response.body().string()).contains("https://yandex.ru");
         });
     }
@@ -132,7 +130,7 @@ public final class AppTest {
     public void testShowNonExistingUrl() {
         JavalinTest.test(app, (server, client) -> {
             Response response = client.get("/urls/9999909");
-            assertThat(response.code()).isEqualTo(404);
+            assertThat(response.code()).isEqualTo(HttpStatus.NOT_FOUND.getCode());
         });
     }
 
@@ -142,7 +140,7 @@ public final class AppTest {
             var requestBody = "url=not-a-valid-url";
             Response response = client.post("/urls", requestBody);
 
-            assertThat(response.code()).isEqualTo(422);
+            assertThat(response.code()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT.getCode());
             String body = response.body().string();
             assertThat(body).contains("Анализатор страниц");
             assertThat(body).contains("Некорректный URL");
@@ -153,7 +151,7 @@ public final class AppTest {
     public void testShowUrlInvalidIdFormat() {
         JavalinTest.test(app, (server, client) -> {
             Response response = client.get("/urls/abc");
-            assertThat(response.code()).isEqualTo(500);
+            assertThat(response.code()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.getCode());
         });
     }
 
@@ -162,22 +160,22 @@ public final class AppTest {
         String fakeHtml = "<html><head><title>Test Title</title></head>"
                 + "<body><h1>Test H1</h1><meta name=\"description\" content=\"Test Desc\" /></body></html>";
 
-        mockServer.enqueue(new MockResponse().setBody(fakeHtml).setResponseCode(200));
+        mockServer.enqueue(new MockResponse().setBody(fakeHtml).setResponseCode(HttpStatus.OK.getCode()));
 
         String mockUrl = mockServer.url("/").toString();
 
-        var url = new Url(mockUrl, new Timestamp(System.currentTimeMillis()));
+        var url = new Url(mockUrl, Instant.now());
         UrlRepository.save(url);
 
         JavalinTest.test(app, (server, client) -> {
             Response response = client.post("/urls/" + url.getId() + "/checks");
-            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.code()).isEqualTo(HttpStatus.OK.getCode());
 
             var checks = UrlCheckRepository.findByUrlId(url.getId());
             assertThat(checks).isNotEmpty();
 
             var lastCheck = checks.get(0);
-            assertThat(lastCheck.getStatusCode()).isEqualTo(200);
+            assertThat(lastCheck.getStatusCode()).isEqualTo(HttpStatus.OK.getCode());
             assertThat(lastCheck.getTitle()).isEqualTo("Test Title");
             assertThat(lastCheck.getH1()).isEqualTo("Test H1");
             assertThat(lastCheck.getDescription()).isEqualTo("Test Desc");
