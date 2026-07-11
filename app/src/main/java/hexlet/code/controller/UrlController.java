@@ -2,6 +2,7 @@ package hexlet.code.controller;
 
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import io.javalin.http.NotFoundResponse;
 import hexlet.code.model.Url;
 import hexlet.code.model.UrlCheck;
 import hexlet.code.repository.UrlCheckRepository;
@@ -46,7 +47,7 @@ public class UrlController {
             ctx.sessionAttribute("flashType", "info");
             ctx.redirect("/urls/" + existingUrl.get().getId());
         } else {
-            var newUrl = new Url(normalizedUrl, Instant.now());
+            var newUrl = new Url(normalizedUrl);
             UrlRepository.save(newUrl);
             ctx.sessionAttribute("flash", "Страница успешно добавлена");
             ctx.sessionAttribute("flashType", "success");
@@ -65,13 +66,9 @@ public class UrlController {
     }
 
     public static void showUrl(Context ctx) throws Exception {
-        long id = ctx.pathParamAsClass("id", Long.class).get();
-        var url = UrlRepository.find(id);
-
-        if (url.isEmpty()) {
-            ctx.status(HttpStatus.NOT_FOUND);
-            return;
-        }
+        long id = ctx.pathParamAsClass("id", Long.class).getOrDefault(null);
+        var url = UrlRepository.find(id)
+            .orElseThrow(() -> new NotFoundResponse("Url with id " + id + " not found"));
 
         var checks = UrlCheckRepository.findByUrlId(id);
 
@@ -82,7 +79,7 @@ public class UrlController {
         ctx.sessionAttribute("flashType", null);
 
         ctx.render("urls/show.jte", Map.of(
-            "url", url.get(),
+            "url", url,
             "checks", checks,
             "flash", flash == null ? "" : flash,
             "flashType", flashType == null ? "" : flashType
@@ -90,14 +87,10 @@ public class UrlController {
     }
 
     public static void checkUrl(Context ctx) throws Exception {
-        long id = ctx.pathParamAsClass("id", Long.class).get();
-        var urlOptional = UrlRepository.find(id);
+        long id = ctx.pathParamAsClass("id", Long.class).getOrDefault(null);
 
-        if (urlOptional.isEmpty()) {
-            ctx.status(HttpStatus.NOT_FOUND);
-            return;
-        }
-        var url = urlOptional.get();
+        var url = UrlRepository.find(id)
+            .orElseThrow(() -> new NotFoundResponse("Url with id " + id + " not found"));
 
         try {
             var response = kong.unirest.Unirest.get(url.getName()).asString();

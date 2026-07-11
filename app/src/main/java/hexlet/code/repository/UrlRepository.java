@@ -3,6 +3,7 @@ package hexlet.code.repository;
 import hexlet.code.model.Url;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,11 @@ public class UrlRepository extends BaseRepository {
         String sql = "INSERT INTO urls (name, created_at) VALUES (?, ?)";
         try (var conn = dataSource.getConnection();
              var stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            if (url.getCreatedAt() == null) {
+                url.setCreatedAt(Instant.now());
+            }
+
             stmt.setString(1, url.getName());
             stmt.setTimestamp(2, Timestamp.from(url.getCreatedAt()));
             stmt.executeUpdate();

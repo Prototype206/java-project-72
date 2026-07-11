@@ -31,3 +31,7 @@ jacoco:
 win-setup:
 	chmod +x gradlew
 	.\gradlew clean build
+
+win-checkstyle:
+	chmod +x gradlew
+	.\gradlew checkstyleMain checkstyleTest

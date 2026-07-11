@@ -89,7 +89,7 @@
                                 <td>${check.getH1()}</td>
                                 <td>${check.getTitle()}</td>
                                 <td>${check.getDescription()}</td>
-                                <td>${check.getCreatedAt().atZone(ZoneId.of("UTC")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))}</td>
+                                <td>${check.getCreatedAt().atZone(ZoneId.of("UTC")).format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))}</td>
                             </tr>
                         @endfor
                     @endif
