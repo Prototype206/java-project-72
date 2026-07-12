@@ -113,14 +113,13 @@ public class UrlController {
             String description = descriptionElement != null ? descriptionElement.attr("content") : "";
 
             var check = new UrlCheck(
-                id,
-                statusCode,
-                truncate(h1),
-                truncate(title),
-                truncate(description),
-                Instant.now()
-            );
-            UrlCheckRepository.save(check);
+                    id, // это urlId
+                    statusCode,
+                    truncate(h1),
+                    truncate(title),
+                    truncate(description)
+                );
+                UrlCheckRepository.save(check);
 
             ctx.sessionAttribute("flash", "Страница успешно проверена");
             ctx.sessionAttribute("flashType", "success");

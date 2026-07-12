@@ -18,6 +18,11 @@ public class UrlCheckRepository extends BaseRepository {
                 + "VALUES (?, ?, ?, ?, ?, ?)";
         try (var conn = dataSource.getConnection();
              var stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            if (check.getCreatedAt() == null) {
+                check.setCreatedAt(Instant.now());
+            }
+
             stmt.setLong(1, check.getUrlId());
             stmt.setInt(2, check.getStatusCode());
             stmt.setString(3, check.getH1());

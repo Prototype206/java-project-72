@@ -51,12 +51,12 @@
                         <td>${url.getName()}</td>
                     </tr>
                     <tr>
-                        <th>Дата создания</th>
-                        <td>
-                            @if(url.getCreatedAt() != null)
-                                ${url.getCreatedAt().atZone(java.time.ZoneId.of("UTC")).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))}
-                            @endif
-                        </td>
+						<th>Дата создания</th>
+						<td>
+						    @if(url.getCreatedAt() != null)
+						        ${url.getCreatedAt().atZone(java.time.ZoneId.of("UTC")).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))}
+						    @endif
+						</td>
                     </tr>
                 </tbody>
             </table>

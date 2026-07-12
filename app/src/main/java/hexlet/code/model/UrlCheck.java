@@ -15,6 +15,14 @@ public class UrlCheck {
     private String description;
     private Instant createdAt;
 
+    public UrlCheck(Long urlId, int statusCode, String h1, String title, String description) {
+        this.urlId = urlId;
+        this.statusCode = statusCode;
+        this.h1 = h1;
+        this.title = title;
+        this.description = description;
+    }
+
     public UrlCheck(Long urlId, int statusCode, String h1, String title, String description, Instant createdAt) {
         this.urlId = urlId;
         this.statusCode = statusCode;
